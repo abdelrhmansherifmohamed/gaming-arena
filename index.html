@@ -50,7 +50,8 @@
 <div class="left d-none d-lg-block">
 <i class="fa-regular fa-bell fa-xl"></i>
 <i class="fa-regular fa-message fa-xl ms-2"></i>
-<button class="btn btn3 bg-primary-color text-black p-1 ms-3"><h6 class="m-0 ps-3 pe-3 pt-1 pb-1">Sign In</h6></button>
+<button class="btn btn3 bg-primary-color text-black p-1 ms-3" data-bs-toggle="modal" data-bs-target="#authModal" id="signInBtn"><h6 class="m-0 ps-3 pe-3 pt-1 pb-1">Sign In</h6></button>
+<button class="btn btn3 bg-primary-color text-black p-1 ms-3 d-none" id="signOutBtn"><h6 class="m-0 ps-3 pe-3 pt-1 pb-1">Sign Out</h6></button>
 </div>
 
 
@@ -880,6 +881,62 @@
 
 
 
+<!-- Auth Modal -->
+<div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-black border border-dark text-light">
+      <div class="modal-header border-bottom border-dark">
+        <h5 class="modal-title primary-color" id="authModalLabel">Welcome to GameArena</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs border-bottom border-dark mb-3" id="authTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active primary-color bg-transparent" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab" aria-controls="login" aria-selected="true">Sign In</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link text-secondary bg-transparent" id="signup-tab" data-bs-toggle="tab" data-bs-target="#signup" type="button" role="tab" aria-controls="signup" aria-selected="false">Sign Up</button>
+          </li>
+        </ul>
+        <div class="tab-content" id="authTabContent">
+          <!-- Login Form -->
+          <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
+            <form id="loginForm">
+              <div class="mb-3">
+                <label for="loginEmail" class="form-label text-secondary">Email address</label>
+                <input type="email" class="form-control bg-dark text-light border-secondary" id="loginEmail" required>
+              </div>
+              <div class="mb-3">
+                <label for="loginPassword" class="form-label text-secondary">Password</label>
+                <input type="password" class="form-control bg-dark text-light border-secondary" id="loginPassword" required>
+              </div>
+              <button type="submit" class="btn bg-primary-color w-100">Sign In</button>
+            </form>
+          </div>
+          <!-- Signup Form -->
+          <div class="tab-pane fade" id="signup" role="tabpanel" aria-labelledby="signup-tab">
+            <form id="signupForm">
+              <div class="mb-3">
+                <label for="signupEmail" class="form-label text-secondary">Email address</label>
+                <input type="email" class="form-control bg-dark text-light border-secondary" id="signupEmail" required>
+              </div>
+              <div class="mb-3">
+                <label for="signupPassword" class="form-label text-secondary">Password</label>
+                <input type="password" class="form-control bg-dark text-light border-secondary" id="signupPassword" required>
+              </div>
+              <button type="submit" class="btn bg-primary-color w-100">Sign Up</button>
+            </form>
+          </div>
+        </div>
+        <div id="authMessage" class="mt-3 text-center"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./js/supabase-config.js"></script>
+<script src="./js/auth.js"></script>
 <script src="./js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
