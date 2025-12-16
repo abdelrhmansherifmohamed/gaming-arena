@@ -5,6 +5,7 @@ const { setSessionCookies, clearSessionCookies } = require("../utils/cookies");
 
 // POST /api/auth/signup
 router.post("/signup", async (req, res) => {
+  console.log("[auth.signup] signup successful, email confirmation pending");
   const { email, password, username } = req.body;
   if (!email || !password)
     return res.status(400).json({ error: "missing email or password" });
@@ -75,6 +76,7 @@ router.post("/signup", async (req, res) => {
         e?.message || e
       );
     }
+    console.log("[auth.signup] signup successful, email confirmation pending");
 
     return res.json({ user });
   } catch (err) {
@@ -172,39 +174,6 @@ router.post("/signout", async (req, res) => {
   }
 });
 
-// POST /api/auth/refresh
-router.post("/refresh", async (req, res) => {
-  const refreshToken = req.cookies?.sb_refresh_token || req.body?.refreshToken;
-  if (!refreshToken)
-    return res.status(400).json({ error: "missing refreshToken" });
-  try {
-    const { data, error } = await supabase.auth.setSession({
-      refresh_token: refreshToken,
-    });
-    if (error) return res.status(400).json({ error });
-    const session = data?.session ?? data;
-    if (session) setSessionCookies(res, session);
-    return res.json({ session });
-  } catch (err) {
-    return res.status(500).json({ error: err.message || err });
-  }
-});
-
-// POST /api/auth/password-reset
-router.post("/password-reset", async (req, res) => {
-  const { email, redirectTo } = req.body;
-  if (!email) return res.status(400).json({ error: "missing email" });
-  try {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectTo || process.env.FRONTEND_URL,
-    });
-    if (error) return res.status(400).json({ error });
-    return res.json({ data });
-  } catch (err) {
-    return res.status(500).json({ error: err.message || err });
-  }
-});
-
 // GET /api/auth/me
 router.get("/me", async (req, res) => {
   try {
@@ -225,62 +194,6 @@ router.get("/me", async (req, res) => {
       .eq("id", user.id)
       .maybeSingle();
     return res.json({ user, profile, error: profErr });
-  } catch (err) {
-    return res.status(500).json({ error: err.message || err });
-  }
-});
-
-// POST /api/auth/unconfirm
-// body: { email?: string, userId?: string }
-router.post("/unconfirm", async (req, res) => {
-  const { email, userId } = req.body;
-  if (!email && !userId)
-    return res.status(400).json({ error: "missing email or userId" });
-
-  try {
-    let id = userId || null;
-
-    if (!id && email) {
-      // try profiles table first
-      try {
-        const { data: profile, error: profErr } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("email", email)
-          .maybeSingle();
-        if (!profErr && profile?.id) id = profile.id;
-      } catch (e) {
-        console.warn(
-          "[auth.unconfirm] profiles lookup failed:",
-          e?.message || e
-        );
-      }
-    }
-
-    // fallback to admin.listUsers
-    if (!id && email && supabase?.auth?.admin) {
-      try {
-        const listRes = await supabase.auth.admin.listUsers();
-        const found = listRes?.data?.users?.find((u) => u.email === email);
-        if (found?.id) id = found.id;
-      } catch (e) {
-        console.warn(
-          "[auth.unconfirm] admin.listUsers failed:",
-          e?.message || e
-        );
-      }
-    }
-
-    if (!id) return res.status(404).json({ error: "user not found" });
-
-    if (!supabase?.auth?.admin)
-      return res.status(500).json({ error: "admin API not available" });
-
-    await supabase.auth.admin.updateUserById(id, {
-      email_confirmed_at: null,
-    });
-
-    return res.json({ ok: true, userId: id });
   } catch (err) {
     return res.status(500).json({ error: err.message || err });
   }
