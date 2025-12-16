@@ -47,11 +47,23 @@
 </ul>
 </div>
     </div>
-<div class="left d-none d-lg-block">
+<div class="left d-none d-lg-block d-flex align-items-center">
 <i class="fa-regular fa-bell fa-xl"></i>
 <i class="fa-regular fa-message fa-xl ms-2"></i>
+
+<!-- User info display (hidden by default) -->
+<div id="userInfo" class="d-none align-items-center ms-3 text-light">
+  <i class="fa-solid fa-user primary-color me-2"></i>
+  <div class="d-inline-block text-start">
+    <div id="headerUsername" class="fw-bold primary-color">Guest</div>
+    <div id="headerEmail" class="small text-secondary">Not signed in</div>
+  </div>
+</div>
+
 <button class="btn btn3 bg-primary-color text-black p-1 ms-3" data-bs-toggle="modal" data-bs-target="#authModal" id="signInBtn"><h6 class="m-0 ps-3 pe-3 pt-1 pb-1">Sign In</h6></button>
 <button class="btn btn3 bg-primary-color text-black p-1 ms-3 d-none" id="signOutBtn"><h6 class="m-0 ps-3 pe-3 pt-1 pb-1">Sign Out</h6></button>
+<button class="btn btn-outline-light ms-3" id="testBackendBtn">Test Backend</button>
+<span id="testBackendStatus" class="ms-2 text-light" style="display:none"></span>
 </div>
 
 
@@ -69,7 +81,7 @@
 
 <div class="container p-5 mt-3 ">
 <div class="ultimate text-center  position-relative z-3 ">
-<h1 class="text-light">THE ULTIMATE <span>GAMING</span> EXPERIENCE</h1>
+<h1 id="heroTitle" class="text-light">THE ULTIMATE <span>GAMING</span> EXPERIENCE</h1>
 <p>Join millions of gamers worldwide in the most competitive eSports tournaments. Experience next-level gaming with cutting-edge technology and endless possibilities.</p>
 <div class="buttons">
 <button class="btn btn1  mb-2"><span class="p-1">Start Gaming Now</span></button>
@@ -924,6 +936,10 @@
                 <label for="signupPassword" class="form-label text-secondary">Password</label>
                 <input type="password" class="form-control bg-dark text-light border-secondary" id="signupPassword" required>
               </div>
+              <div class="mb-3">
+                <label for="signupUsername" class="form-label text-secondary">Username</label>
+                <input type="text" class="form-control bg-dark text-light border-secondary" id="signupUsername" required>
+              </div>
               <button type="submit" class="btn bg-primary-color w-100">Sign Up</button>
             </form>
           </div>
@@ -934,9 +950,154 @@
   </div>
 </div>
 
+        <!-- User info modal shown after signup/signin -->
+        <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-black border border-dark text-light">
+              <div class="modal-header border-bottom border-dark">
+                <h5 class="modal-title primary-color" id="userModalLabel">Welcome</h5>
+              </div>
+              <div class="modal-body">
+                <p class="m-0">Signed in as:</p>
+                <h4 id="popupUserName" class="primary-color mt-2">User</h4>
+                <p id="popupUserEmail" class="text-secondary small">email@example.com</p>
+              </div>
+              <div class="modal-footer border-top border-dark">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Exit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./js/supabase-config.js"></script>
-<script src="./js/auth.js"></script>
 <script src="./js/bootstrap.bundle.min.js"></script>
+<script src="./js/auth.js"></script>
+<script>
+// Header user helper and small runtime scripts
+(function(){
+  function setUser(user){
+    const info = document.getElementById('userInfo');
+    const nameEl = document.getElementById('headerUsername');
+    const emailEl = document.getElementById('headerEmail');
+    const heroEl = document.getElementById('heroTitle');
+    const signInBtn = document.getElementById('signInBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    if(!info || !nameEl || !emailEl) return;
+    if(user && user.email){
+      const baseName = user.username || user.name || (user.user_metadata && user.user_metadata.full_name) || user.email.split('@')[0];
+      nameEl.textContent = 'Hu ' + baseName;
+      emailEl.textContent = user.email;
+      if(heroEl){
+        heroEl.innerHTML = `Hu <span class="primary-color">${escapeHtml(baseName)}</span> <div class="small text-secondary">${escapeHtml(user.email)}</div>`;
+      }
+      info.classList.remove('d-none');
+      if(signInBtn) signInBtn.classList.add('d-none');
+      if(signOutBtn) signOutBtn.classList.remove('d-none');
+    } else {
+      info.classList.add('d-none');
+      if(signInBtn) signInBtn.classList.remove('d-none');
+      if(signOutBtn) signOutBtn.classList.add('d-none');
+      if(heroEl){
+        heroEl.innerHTML = 'THE ULTIMATE <span>GAMING</span> EXPERIENCE';
+      }
+    }
+  }
+  function escapeHtml(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, function(s){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[s];
+    });
+  }
+  window.updateHeaderUser = setUser;
+  // Show a popup modal with the user name/email after auth events
+  window.showUserPopup = function(user){
+    if(!user) return;
+    try{
+      console.log('[showUserPopup] invoked with', user);
+      const name = user.username || user.name || (user.user_metadata && user.user_metadata.full_name) || (user.email && user.email.split('@')[0]) || '';
+      const email = user.email || '';
+      const nameEl = document.getElementById('popupUserName');
+      const emailEl = document.getElementById('popupUserEmail');
+      if(nameEl) nameEl.textContent = 'Hu ' + name;
+      if(emailEl) emailEl.textContent = email;
+      const modalEl = document.getElementById('userModal');
+      console.log('[showUserPopup] modalEl, bootstrap present?', !!modalEl, !!window.bootstrap, !!(window.bootstrap && window.bootstrap.Modal));
+      if(modalEl && window.bootstrap && window.bootstrap.Modal){
+        try{
+          const inst = new window.bootstrap.Modal(modalEl);
+          inst.show();
+          console.log('[showUserPopup] modal shown');
+          return;
+        }catch(err){
+          console.warn('[showUserPopup] modal show failed', err);
+        }
+      }
+      // Always show a persistent banner as a fallback/backup so it doesn't disappear
+      try{
+        let banner = document.getElementById('userBanner');
+        if(!banner){
+          banner = document.createElement('div');
+          banner.id = 'userBanner';
+          banner.style.zIndex = 2000;
+          banner.className = 'position-fixed top-0 start-50 translate-middle-x mt-5 p-3 rounded-3 border border-dark bg-black text-light';
+          document.body.appendChild(banner);
+        }
+        banner.innerHTML = `
+          <div class="d-flex align-items-center">
+            <div class="me-3"><i class="fa-solid fa-user primary-color fa-2x"></i></div>
+            <div class="me-3">
+              <div class="fw-bold primary-color">Hu ${escapeHtml(name)}</div>
+              <div class="small text-secondary">${escapeHtml(email)}</div>
+            </div>
+            <div class="ms-auto">
+              <button id="userBannerExit" class="btn btn-primary btn-sm">Exit</button>
+            </div>
+          </div>`;
+        banner.style.display = 'block';
+        const exitBtn = document.getElementById('userBannerExit');
+        if(exitBtn){
+          exitBtn.onclick = function(){
+            try{ banner.remove(); }catch(e){}
+            try{ const modalEl = document.getElementById('userModal'); if(modalEl && window.bootstrap && window.bootstrap.Modal){ const inst = window.bootstrap.Modal.getInstance(modalEl); if(inst) inst.hide(); } }catch(e){}
+          };
+        }
+      }catch(e){
+        try{ alert('Signed in as: ' + name + ' (' + email + ')'); }catch(err){}
+      }
+    }catch(e){console.warn('showUserPopup failed', e)}
+  };
+  try{
+    const raw = localStorage.getItem('user') || localStorage.getItem('profile');
+    if(raw){
+      let parsed;
+      try{ parsed = JSON.parse(raw); }catch(e){ parsed = null; }
+      if(parsed) setUser(parsed);
+    }
+  }catch(e){}
+})();
+
+// Quick frontend test helper: calls the backend test endpoint and logs result
+(function(){
+  const btn = document.getElementById('testBackendBtn');
+  const status = document.getElementById('testBackendStatus');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    try {
+      status.style.display = 'inline';
+      status.textContent = 'Testing...';
+      const res = await fetch('http://localhost:3000/api/diagnostic/hello', { method: 'GET' });
+      const json = await res.json();
+      console.log('backend test response', json);
+      status.textContent = json && json.ok ? 'OK' : 'Error';
+    } catch (err) {
+      console.error('backend test failed', err);
+      status.style.display = 'inline';
+      status.textContent = 'Request failed';
+    }
+    setTimeout(()=>{ status.style.display='none'; }, 3000);
+  });
+})();
+</script>
 </body>
 </html>
