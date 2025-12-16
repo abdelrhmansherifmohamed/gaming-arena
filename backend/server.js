@@ -16,8 +16,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Configure allowed origins for CORS. Set `ALLOWED_ORIGINS` env var as comma-separated list.
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000')
-  .split(',')
+const allowedOrigins = (
+  process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000"
+)
+  .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
@@ -26,10 +28,10 @@ const corsOptions = {
     // If no origin (curl/postman/server-side), allow.
     if (!origin) return callback(null, true);
     // Allow file:// served pages which send the literal 'null' origin when enabled via env var
-    const allowFileOrigin = process.env.ALLOW_FILE_ORIGIN === 'true';
-    if (allowFileOrigin && origin === 'null') return callback(null, true);
+    const allowFileOrigin = process.env.ALLOW_FILE_ORIGIN === "true";
+    if (allowFileOrigin && origin === "null") return callback(null, true);
     if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
-    return callback(new Error('CORS policy: origin not allowed'));
+    return callback(new Error("CORS policy: origin not allowed"));
   },
   credentials: true,
 };
@@ -37,18 +39,18 @@ const corsOptions = {
 app.use((req, res, next) => {
   // Simple logging of incoming origin for debugging
   if (req.headers && req.headers.origin) {
-    console.log('[origin]', req.headers.origin);
+    console.log("[origin]", req.headers.origin);
   }
   next();
 });
 
 app.use(cors(corsOptions));
 // Ensure preflight requests are handled
-app.options('*', cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // Simple request logger to help debug frontend <-> backend connectivity
 app.use((req, res, next) => {
-  console.log('[req]', req.method, req.path);
+  console.log("[req]", req.method, req.path);
   next();
 });
 
